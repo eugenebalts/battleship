@@ -2,7 +2,7 @@ import bodyParser from 'body-parser';
 import express, { Request, Response } from 'express';
 import http, { createServer } from 'http';
 import WebSocket, { WebSocketServer } from 'ws';
-import webSocketHandlers from '../controllers/websocketHandlers';
+import webSocketHandlers from '../app/controllers/websocketHandlers';
 
 class Server {
   public app = express();
