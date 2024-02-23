@@ -2,10 +2,9 @@
   "name": "battleship",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
   "scripts": {
-    "start:dev": "nodemon --exec ts-node-dev ./index.ts",
-    "start:prod": "npm run build && node ./dist/index.js",
+    "start:dev": "nodemon --exec ts-node-dev ./src/index.ts",
+    "start:prod": "npm run build && node ./dist/src/index.js",
     "build": "tsc"
   },
   "author": "Yauheni Baltsevich",
@@ -17,6 +16,7 @@
     "@types/node": "^20.11.17",
     "@types/supertest": "^6.0.2",
     "@types/uuid": "^9.0.8",
+    "@types/ws": "^8.5.10",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "dotenv": "^16.4.2",
@@ -33,6 +33,7 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
+    "express": "^4.18.2",
     "ws": "^8.16.0"
   }
 }
