@@ -24,12 +24,24 @@ export interface IPlayerResponse extends ILoginStaticRequest {
 
 export interface IGameRoom {
   roomId: number | string;
-  roomUsers: IUserData[];
+  roomUsers: IPublicUserData[];
+  games?: Record<string, IGame>;
+}
+
+export interface IPublicUserData {
+  name: string;
+  index: number;
+}
+
+interface IGame {
+  gameId: string;
+  gameField: string;
 }
 
 export interface IUserData {
-  name: string | number | null;
+  name: string | null;
   index: string | number | null;
+  isLogged: boolean;
 }
 
 export type BodyTypes =

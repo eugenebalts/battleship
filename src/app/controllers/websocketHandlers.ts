@@ -11,6 +11,7 @@ const webSocketHandlers = (ws: WebSocket) => {
   const userData: IUserData = {
     name: null,
     index: null,
+    isLogged: false,
   };
 
   ws.addEventListener('message', (event) => {
@@ -24,7 +25,6 @@ const webSocketHandlers = (ws: WebSocket) => {
           'id' in parsedData &&
           typeof parsedData.type === 'string' &&
           parsedData.data !== null &&
-          typeof parsedData.data === 'object' &&
           parsedData.id === 0
         )
       ) {
@@ -35,6 +35,8 @@ const webSocketHandlers = (ws: WebSocket) => {
 
       switch (type) {
         case 'reg': {
+          if (userData.isLogged) return ws.send('You are already logged!');
+
           if (
             !(
               'name' in data &&
@@ -51,6 +53,7 @@ const webSocketHandlers = (ws: WebSocket) => {
           if (!loginUserData.error) {
             userData.name = loginUserData.name;
             userData.index = loginUserData.index;
+            userData.isLogged = true;
           }
 
           ws.send('Successfully logged!');
@@ -63,9 +66,9 @@ const webSocketHandlers = (ws: WebSocket) => {
 
         case 'create_room': {
           if (userData.name) {
-            const roomId = database.createGameRoom(userData);
+            const roomId = database.createGameRoom(userData.name);
 
-            ws.send(`Room has been successfully created (${roomId})`);
+            ws.send(`Room has been successfully created with id (${roomId})`);
 
             sendUpdatedRooms();
           } else {
@@ -78,10 +81,6 @@ const webSocketHandlers = (ws: WebSocket) => {
         case 'add_user_to_room': {
           if (!userData.name) throw new Error('At first login/register!');
 
-          console.log('indexRoom' in data);
-          console.log(typeof data.indexRoom === 'string');
-          console.log('indexRoom' in data);
-
           if (
             !('indexRoom' in data) ||
             (typeof data.indexRoom !== 'string' &&
@@ -91,9 +90,11 @@ const webSocketHandlers = (ws: WebSocket) => {
           }
 
           const roomId = Number(data.indexRoom);
-          const addUserToRoom = database.addPlayerToRoom(roomId, userData);
+          const addUserToRoom = database.addPlayerToRoom(roomId, userData.name);
 
           if (!(addUserToRoom instanceof Error)) {
+            ws.send(`Successfully connected to room with id (${roomId})`);
+
             sendUpdatedRooms();
           } else {
             throw new Error(addUserToRoom.message);

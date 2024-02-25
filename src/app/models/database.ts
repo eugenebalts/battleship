@@ -6,60 +6,58 @@ import {
   IUserData,
   IWinners,
 } from './types';
+import User from './user';
 
 class Database {
-  private players: ILoginData[] = [];
+  private players: Record<string, User> = {};
   private gameRooms: IGameRoom[] = [];
   private winners: IWinners[] = [];
+  private ranGames = [];
 
-  private findUser(name: string): number {
-    return this.players.findIndex((player) => {
-      return player.name === name;
-    });
+  private findUser(name: string): User | undefined {
+    return this.players[name];
   }
 
   public login(playerData: ILoginData): ILoginResponse {
     const { name, password } = playerData;
 
-    const playerIndex = this.findUser(name);
-    let index = playerIndex;
-    let error = false;
-    let errorText = '';
+    const user: User | undefined = this.findUser(name);
 
-    if (playerIndex !== -1) {
-      if (this.players[playerIndex].password !== password) {
+    if (user) {
+      let error = false;
+      let errorText = '';
+      const index = user.index;
+
+      if (!user.isCorrectPassword(password)) {
         error = true;
         errorText = 'Wrong password';
       }
+
+      return {
+        name,
+        index,
+        error,
+        errorText,
+      };
     } else {
-      index = this.register(playerData);
+      return this.register(playerData);
     }
-
-    return {
-      name,
-      index,
-      error,
-      errorText,
-    };
   }
 
-  private register(playerData: ILoginData): number {
-    const { name, password } = playerData;
+  private register(playerData: ILoginData) {
+    const index = Object.keys(this.players).length;
 
-    const newUser: ILoginData = {
-      name,
-      password: password,
-    };
+    this.players[playerData.name] = new User(playerData, index);
 
-    return this.players.push(newUser) - 1;
+    return this.login(playerData);
   }
 
-  public createGameRoom(user: IUserData): number {
+  public createGameRoom(userName: string): number {
     const roomId = this.gameRooms.length;
 
     const newGameRoom: IGameRoom = {
       roomId,
-      roomUsers: [user],
+      roomUsers: [this.players[userName].getPublicUserData()],
     };
 
     this.gameRooms.push(newGameRoom);
@@ -79,16 +77,21 @@ class Database {
     return this.winners;
   }
 
-  public addPlayerToRoom(roomId: number, user: IUserData) {
+  public addPlayerToRoom(roomId: number, userName: string) {
     if (this.gameRooms[roomId] && this.gameRooms[roomId].roomUsers.length < 2) {
-      this.gameRooms[roomId].roomUsers.push(user);
+      this.gameRooms[roomId].roomUsers.push(this.players[userName]);
 
       if (this.gameRooms[roomId].roomUsers.length === 2) {
-        return true;
+        return roomId;
       }
     }
 
-    return new Error(`There are no available rooms with ${roomId}`);
+    return new Error(`There are no available rooms with id ${roomId}`);
+  }
+
+  public createGame(roomId: number, user: IUserData) {
+    const idGame = generateId();
+    const idPlayer = generateId();
   }
 }
 
