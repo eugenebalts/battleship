@@ -2,7 +2,11 @@ import WebSocket from 'ws';
 import database from '../models/database';
 import { BodyTypes, IUserData } from '../models/types';
 
+const connections: WebSocket[] = [];
+
 const webSocketHandlers = (ws: WebSocket) => {
+  connections.push(ws);
+
   ws.send('Successfully connected to WebSocket.');
   const userData: IUserData = {
     name: null,
@@ -50,7 +54,9 @@ const webSocketHandlers = (ws: WebSocket) => {
           }
 
           ws.send('Successfully logged!');
-          sendResponse(type, loginUserData);
+          sendPersonalResponse(type, loginUserData);
+          sendUpdatedRooms();
+          sendUpdatedWinners();
 
           break;
         }
@@ -77,7 +83,7 @@ const webSocketHandlers = (ws: WebSocket) => {
     }
   });
 
-  const sendResponse = (type: BodyTypes, data: unknown) => {
+  const sendPersonalResponse = (type: BodyTypes, data: unknown) => {
     const request = {
       type,
       data,
@@ -87,10 +93,30 @@ const webSocketHandlers = (ws: WebSocket) => {
     return ws.send(JSON.stringify(request));
   };
 
+  const sendResponseForAll = (type: BodyTypes, data: unknown) => {
+    const request = {
+      type,
+      data,
+      id: 0,
+    };
+
+    connections.forEach((client) => {
+      client.send(JSON.stringify(request));
+    });
+
+    return ws.send(JSON.stringify(request));
+  };
+
   const sendUpdatedRooms = () => {
     const updatedRooms = database.updateRooms();
 
-    return sendResponse('update_room', updatedRooms);
+    return sendResponseForAll('update_room', updatedRooms);
+  };
+
+  const sendUpdatedWinners = () => {
+    const updatedWinners = database.updateWinners();
+
+    return sendResponseForAll('update_winners ', updatedWinners);
   };
 };
 

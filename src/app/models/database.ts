@@ -73,6 +73,10 @@ class Database {
 
     return singleRooms;
   }
+
+  public updateWinners() {
+    return this.winners;
+  }
 }
 
 export default new Database();
