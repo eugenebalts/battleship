@@ -1,18 +1,24 @@
-import { IPlayerData, ILoginResponse } from './types';
+import {
+  IGameRoom,
+  ILoginData,
+  ILoginResponse,
+  IUserData,
+  IWinners,
+} from './types';
 
 class Database {
-  private players: IPlayerData[] = [];
+  private players: ILoginData[] = [];
+  private gameRooms: IGameRoom[] = [];
+  private winners: IWinners[] = [];
 
-  private findUser(name: string) {
+  private findUser(name: string): number {
     return this.players.findIndex((player) => {
       return player.name === name;
     });
   }
 
-  public login(playerData: IPlayerData): ILoginResponse {
+  public login(playerData: ILoginData): ILoginResponse {
     const { name, password } = playerData;
-
-    console.log(typeof name, typeof password);
 
     const playerIndex = this.findUser(name);
     let index = playerIndex;
@@ -36,15 +42,36 @@ class Database {
     };
   }
 
-  private register(playerData: IPlayerData) {
+  private register(playerData: ILoginData): number {
     const { name, password } = playerData;
 
-    const newUser: IPlayerData = {
+    const newUser: ILoginData = {
       name,
       password: password,
     };
 
     return this.players.push(newUser) - 1;
+  }
+
+  public createGameRoom(user: IUserData): number {
+    const roomId = this.gameRooms.length;
+
+    const newGameRoom: IGameRoom = {
+      roomId,
+      roomUsers: [user],
+    };
+
+    this.gameRooms.push(newGameRoom);
+
+    return roomId;
+  }
+
+  public updateRooms() {
+    const singleRooms = this.gameRooms.filter(
+      (room) => room.roomUsers.length < 2
+    );
+
+    return singleRooms;
   }
 }
 
