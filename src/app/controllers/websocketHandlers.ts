@@ -75,6 +75,33 @@ const webSocketHandlers = (ws: WebSocket) => {
           break;
         }
 
+        case 'add_user_to_room': {
+          if (!userData.name) throw new Error('At first login/register!');
+
+          console.log('indexRoom' in data);
+          console.log(typeof data.indexRoom === 'string');
+          console.log('indexRoom' in data);
+
+          if (
+            !('indexRoom' in data) ||
+            (typeof data.indexRoom !== 'string' &&
+              typeof data.indexRoom !== 'number')
+          ) {
+            throw new Error('Bad request: Wrong request data.');
+          }
+
+          const roomId = Number(data.indexRoom);
+          const addUserToRoom = database.addPlayerToRoom(roomId, userData);
+
+          if (!(addUserToRoom instanceof Error)) {
+            sendUpdatedRooms();
+          } else {
+            throw new Error(addUserToRoom.message);
+          }
+
+          break;
+        }
+
         default:
           throw new Error('Bad request: Unknown type.');
       }
@@ -103,8 +130,6 @@ const webSocketHandlers = (ws: WebSocket) => {
     connections.forEach((client) => {
       client.send(JSON.stringify(request));
     });
-
-    return ws.send(JSON.stringify(request));
   };
 
   const sendUpdatedRooms = () => {

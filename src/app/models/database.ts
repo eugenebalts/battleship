@@ -1,3 +1,4 @@
+import { generateId } from '../../utils/generateId';
 import {
   IGameRoom,
   ILoginData,
@@ -76,6 +77,18 @@ class Database {
 
   public updateWinners() {
     return this.winners;
+  }
+
+  public addPlayerToRoom(roomId: number, user: IUserData) {
+    if (this.gameRooms[roomId] && this.gameRooms[roomId].roomUsers.length < 2) {
+      this.gameRooms[roomId].roomUsers.push(user);
+
+      if (this.gameRooms[roomId].roomUsers.length === 2) {
+        return true;
+      }
+    }
+
+    return new Error(`There are no available rooms with ${roomId}`);
   }
 }
 
