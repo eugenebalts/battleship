@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "start:dev": "nodemon --exec ts-node-dev ./src/index.ts",
+    "start": "nodemon --exec ts-node-dev ./src/index.ts",
     "start:prod": "npm run build && node ./dist/src/index.js",
     "build": "tsc"
   },
