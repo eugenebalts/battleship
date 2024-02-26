@@ -10,9 +10,8 @@ import User from './user';
 
 class Database {
   private players: Record<string, User> = {};
-  private gameRooms: IGameRoom[] = [];
+  private gameRooms: Record<number, IGameRoom> = {};
   private winners: IWinners[] = [];
-  private ranGames = [];
 
   private findUser(name: string): User | undefined {
     return this.players[name];
@@ -53,20 +52,25 @@ class Database {
   }
 
   public createGameRoom(userName: string): number {
-    const roomId = this.gameRooms.length;
+    const allRoomsId = Object.keys(this.gameRooms).map(Number);
+
+    const newRoomId = allRoomsId.length
+      ? allRoomsId[allRoomsId.length - 1] + 1
+      : 0;
 
     const newGameRoom: IGameRoom = {
-      roomId,
+      roomId: newRoomId,
       roomUsers: [this.players[userName].getPublicUserData()],
+      games: {},
     };
 
-    this.gameRooms.push(newGameRoom);
+    this.gameRooms[newRoomId] = newGameRoom;
 
-    return roomId;
+    return newRoomId;
   }
 
   public updateRooms() {
-    const singleRooms = this.gameRooms.filter(
+    const singleRooms = Object.values(this.gameRooms).filter(
       (room) => room.roomUsers.length < 2
     );
 
@@ -78,8 +82,13 @@ class Database {
   }
 
   public addPlayerToRoom(roomId: number, userName: string) {
-    if (this.gameRooms[roomId] && this.gameRooms[roomId].roomUsers.length < 2) {
-      this.gameRooms[roomId].roomUsers.push(this.players[userName]);
+    const isRoomExists = this.gameRooms[roomId];
+    const isRoomFree = this.gameRooms[roomId].roomUsers.length < 2;
+
+    if (isRoomExists && isRoomFree) {
+      this.gameRooms[roomId].roomUsers.push(
+        this.players[userName].getPublicUserData()
+      );
 
       if (this.gameRooms[roomId].roomUsers.length === 2) {
         return roomId;
@@ -89,9 +98,11 @@ class Database {
     return new Error(`There are no available rooms with id ${roomId}`);
   }
 
-  public createGame(roomId: number, user: IUserData) {
+  public createGame(roomId: number, userName: string) {
     const idGame = generateId();
     const idPlayer = generateId();
+
+    this.gameRooms[roomId].games;
   }
 }
 

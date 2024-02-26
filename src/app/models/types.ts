@@ -25,7 +25,7 @@ export interface IPlayerResponse extends ILoginStaticRequest {
 export interface IGameRoom {
   roomId: number | string;
   roomUsers: IPublicUserData[];
-  games?: Record<string, IGame>;
+  games: Record<string, IGame>;
 }
 
 export interface IPublicUserData {
