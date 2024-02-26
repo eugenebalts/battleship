@@ -33,7 +33,7 @@ class Server {
     this.wss.on('connection', webSocketHandlers);
   }
 
-  private configureRoutes() {
+  public configureRoutes() {
     this.app.use('/', (req: Request, res: Response) => {
       res.send('Hello world!');
     });

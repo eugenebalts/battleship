@@ -128,20 +128,81 @@ const webSocketHandlers = (ws: WebSocket) => {
 
             ws.send(JSON.stringify(rooms));
 
-            sendUpdatedRooms();
-            sendUpdatedWinners();
-
             if (isRoomFully) {
               const newGame = database.createGame(roomId);
 
               sendCreatedGame(roomId, newGame);
             }
+
+            sendUpdatedRooms();
+            sendUpdatedWinners();
           } else {
             throw new Error(isRoomFully.message);
           }
 
           break;
         }
+
+        case 'add_ships':
+          {
+            if (!userData.name) throw new Error('At first login/register!');
+
+            if (
+              !('indexPlayer' in data) ||
+              (typeof data.indexPlayer !== 'string' &&
+                typeof data.indexPlayer !== 'number')
+            ) {
+              throw new Error('Bad request: Wrong request data (indexPlayer).');
+            }
+
+            if (
+              !('gameId' in data) ||
+              (typeof data.gameId !== 'string' &&
+                typeof data.gameId !== 'number')
+            ) {
+              throw new Error('Bad request: Wrong request data (gameId).');
+            }
+
+            if (!('ships' in data) || !Array.isArray(data.ships)) {
+              throw new Error('Bad request: Wrong request data (ships).');
+            }
+
+            if (data.ships.length < 4) {
+              throw new Error(
+                'Bad request: The request must contain 4 different ships - "small"|"medium"|"large"|"huge".'
+              );
+            }
+
+            data.ships;
+
+            const enableTypes = ['small', 'medium', 'large', 'huge'];
+
+            const isCorrectShipFields: Boolean = data.ships.every(
+              (ship: any) => {
+                const isShipObject =
+                  typeof ship === 'object' &&
+                  ship !== null &&
+                  ship !== undefined;
+
+                const isPosition =
+                  'position' in ship &&
+                  typeof ship.position === 'object' &&
+                  ship.position !== null &&
+                  ship.position !== undefined;
+
+                const isType =
+                  'type' in ship && enableTypes.includes(ship.type);
+
+                return isShipObject && isPosition && isType;
+              }
+            );
+
+            if (!isCorrectShipFields) {
+              throw new Error('Bad request. Wrong Ship fields');
+            }
+          }
+
+          break;
 
         default:
           throw new Error('Bad request: Unknown type.');

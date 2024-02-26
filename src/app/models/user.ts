@@ -4,6 +4,7 @@ export default class User {
   public name: string;
   private password: string;
   public index: number;
+  public games = {};
 
   constructor(loginData: ILoginData, index: number) {
     this.name = loginData.name;
