@@ -46,9 +46,22 @@ export interface IGame {
   players: Record<string, IPublicUserData>;
 }
 
+export enum CellStatus {
+  Empty,
+  Occupied,
+  Hit,
+  Miss,
+}
+
+export interface IPlayerData {
+  gameField: CellStatus[][];
+  user: IPublicUserData;
+  idPlayer: string;
+}
+
 export interface IUserData {
   name: string | null;
-  index: string | number | null;
+  index: number | null;
   isLogged: boolean;
 }
 

@@ -1,8 +1,19 @@
 import WebSocket from 'ws';
 import database from '../models/database';
 import { BodyTypes, ICreatedGameResponse, IUserData } from '../models/types';
+import Game from '../models/game';
+
+interface IRoom {
+  users: IRoomUser[];
+}
+
+interface IRoomUser {
+  userIndex: number;
+  websocket: WebSocket;
+}
 
 const connections: WebSocket[] = [];
+const rooms: Record<string, IRoom> = {};
 
 const webSocketHandlers = (ws: WebSocket) => {
   connections.push(ws);
@@ -57,7 +68,7 @@ const webSocketHandlers = (ws: WebSocket) => {
           }
 
           ws.send('Successfully logged!');
-          sendPersonalResponse(type, loginUserData);
+          sendPersonalResponse(type, loginUserData, ws);
           sendUpdatedRooms();
           sendUpdatedWinners();
 
@@ -69,6 +80,14 @@ const webSocketHandlers = (ws: WebSocket) => {
             const roomId = database.createGameRoom(userData.name);
 
             ws.send(`Room has been successfully created with id (${roomId})`);
+
+            const userIndex = userData.index;
+
+            if (userIndex !== null) {
+              rooms[roomId] = {
+                users: [{ userIndex, websocket: ws }],
+              };
+            }
 
             sendUpdatedRooms();
           } else {
@@ -90,15 +109,35 @@ const webSocketHandlers = (ws: WebSocket) => {
           }
 
           const roomId = Number(data.indexRoom);
-          const addUserToRoom = database.addPlayerToRoom(roomId, userData.name);
+          const isRoomFully = database.addPlayerToRoom(roomId, userData.name);
 
-          if (!(addUserToRoom instanceof Error)) {
+          if (!(isRoomFully instanceof Error)) {
             ws.send(`Successfully connected to room with id (${roomId})`);
 
+            const userIndex = userData.index;
+
+            if (userIndex !== null) {
+              const roomUsers = rooms[roomId].users ?? [];
+
+              roomUsers.push({ userIndex, websocket: ws });
+
+              rooms[roomId] = {
+                users: roomUsers,
+              };
+            }
+
+            ws.send(JSON.stringify(rooms));
+
             sendUpdatedRooms();
-            sendCreatedGame(addUserToRoom);
+            sendUpdatedWinners();
+
+            if (isRoomFully) {
+              const newGame = database.createGame(roomId);
+
+              sendCreatedGame(roomId, newGame);
+            }
           } else {
-            throw new Error(addUserToRoom.message);
+            throw new Error(isRoomFully.message);
           }
 
           break;
@@ -112,14 +151,18 @@ const webSocketHandlers = (ws: WebSocket) => {
     }
   });
 
-  const sendPersonalResponse = (type: BodyTypes, data: unknown) => {
+  const sendPersonalResponse = (
+    type: BodyTypes,
+    data: unknown,
+    client: WebSocket
+  ) => {
     const request = {
       type,
       data,
       id: 0,
     };
 
-    return ws.send(JSON.stringify(request));
+    return client.send(JSON.stringify(request));
   };
 
   const sendResponseForAll = (type: BodyTypes, data: unknown) => {
@@ -146,8 +189,29 @@ const webSocketHandlers = (ws: WebSocket) => {
     return sendResponseForAll('update_winners ', updatedWinners);
   };
 
-  const sendCreatedGame = (data: ICreatedGameResponse) => {
-    sendPersonalResponse('create_game', data);
+  const sendCreatedGame = (roomId: number, game: Game) => {
+    const type: BodyTypes = 'create_game';
+
+    rooms[roomId].users.forEach((user) => {
+      const client = user.websocket;
+      const { userIndex } = user;
+
+      const playerData = game.players.find(
+        (player) => player.user.index === userIndex
+      );
+
+      if (playerData) {
+        const { idGame } = game;
+        const { idPlayer } = playerData;
+
+        const data = {
+          idGame,
+          idPlayer,
+        };
+
+        sendPersonalResponse(type, data, client);
+      }
+    });
   };
 };
 

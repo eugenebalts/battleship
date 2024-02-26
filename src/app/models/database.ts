@@ -63,11 +63,13 @@ class Database {
 
     const newGameRoom: IGameRoom = {
       roomId: newRoomId,
-      roomUsers: [this.players[userName].getPublicUserData()],
+      roomUsers: [],
       game: null,
     };
 
     this.gameRooms[newRoomId] = newGameRoom;
+
+    this.addPlayerToRoom(newRoomId, userName);
 
     return newRoomId;
   }
@@ -77,18 +79,22 @@ class Database {
       (room) => room.roomUsers.length < 2
     );
 
-    return singleRooms;
+    return singleRooms.map((room) => {
+      const { roomId, roomUsers } = room;
+
+      return {
+        roomId,
+        roomUsers,
+      };
+    });
   }
 
   public updateWinners() {
     return this.winners;
   }
 
-  public addPlayerToRoom(
-    roomId: number,
-    userName: string
-  ): ICreatedGameResponse | Error {
-    const isRoomExists = this.gameRooms[roomId];
+  public addPlayerToRoom(roomId: number, userName: string): Boolean | Error {
+    const isRoomExists = roomId in this.gameRooms;
     const isRoomFree = this.gameRooms[roomId].roomUsers.length < 2;
 
     if (isRoomExists && isRoomFree) {
@@ -97,30 +103,19 @@ class Database {
       );
 
       if (this.gameRooms[roomId].roomUsers.length === 2) {
-        return this.createGame(roomId, userName);
+        return true;
       }
     }
 
     return new Error(`There are no available rooms with id ${roomId}`);
   }
 
-  public createGame(roomId: number, userName: string): ICreatedGameResponse {
-    const userData = this.players[userName].getPublicUserData();
+  public createGame(roomId: number): Game {
+    const roomUsers = this.gameRooms[roomId].roomUsers;
 
-    let newGame = this.gameRooms[roomId].game;
-    let userId;
+    const newGame = new Game(roomUsers);
 
-    if (newGame) {
-      userId = newGame.addUser(userData);
-    } else {
-      newGame = new Game();
-      userId = newGame.addUser(userData);
-    }
-
-    return {
-      idGame: newGame.idGame,
-      idPlayer: userId,
-    };
+    return newGame;
   }
 }
 
