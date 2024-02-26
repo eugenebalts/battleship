@@ -1,5 +1,8 @@
 import { generateId } from '../../utils/generateId';
+import Game from './game';
 import {
+  ICreatedGameResponse,
+  IGame,
   IGameRoom,
   ILoginData,
   ILoginResponse,
@@ -61,7 +64,7 @@ class Database {
     const newGameRoom: IGameRoom = {
       roomId: newRoomId,
       roomUsers: [this.players[userName].getPublicUserData()],
-      games: {},
+      game: null,
     };
 
     this.gameRooms[newRoomId] = newGameRoom;
@@ -81,7 +84,10 @@ class Database {
     return this.winners;
   }
 
-  public addPlayerToRoom(roomId: number, userName: string) {
+  public addPlayerToRoom(
+    roomId: number,
+    userName: string
+  ): ICreatedGameResponse | Error {
     const isRoomExists = this.gameRooms[roomId];
     const isRoomFree = this.gameRooms[roomId].roomUsers.length < 2;
 
@@ -91,18 +97,30 @@ class Database {
       );
 
       if (this.gameRooms[roomId].roomUsers.length === 2) {
-        return roomId;
+        return this.createGame(roomId, userName);
       }
     }
 
     return new Error(`There are no available rooms with id ${roomId}`);
   }
 
-  public createGame(roomId: number, userName: string) {
-    const idGame = generateId();
-    const idPlayer = generateId();
+  public createGame(roomId: number, userName: string): ICreatedGameResponse {
+    const userData = this.players[userName].getPublicUserData();
 
-    this.gameRooms[roomId].games;
+    let newGame = this.gameRooms[roomId].game;
+    let userId;
+
+    if (newGame) {
+      userId = newGame.addUser(userData);
+    } else {
+      newGame = new Game();
+      userId = newGame.addUser(userData);
+    }
+
+    return {
+      idGame: newGame.idGame,
+      idPlayer: userId,
+    };
   }
 }
 

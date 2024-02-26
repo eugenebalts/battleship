@@ -1,6 +1,6 @@
 import WebSocket from 'ws';
 import database from '../models/database';
-import { BodyTypes, IUserData } from '../models/types';
+import { BodyTypes, ICreatedGameResponse, IUserData } from '../models/types';
 
 const connections: WebSocket[] = [];
 
@@ -96,6 +96,7 @@ const webSocketHandlers = (ws: WebSocket) => {
             ws.send(`Successfully connected to room with id (${roomId})`);
 
             sendUpdatedRooms();
+            sendCreatedGame(addUserToRoom);
           } else {
             throw new Error(addUserToRoom.message);
           }
@@ -143,6 +144,10 @@ const webSocketHandlers = (ws: WebSocket) => {
     const updatedWinners = database.updateWinners();
 
     return sendResponseForAll('update_winners ', updatedWinners);
+  };
+
+  const sendCreatedGame = (data: ICreatedGameResponse) => {
+    sendPersonalResponse('create_game', data);
   };
 };
 

@@ -1,3 +1,5 @@
+import Game from './game';
+
 interface ILoginStaticRequest {
   type: 'reg';
   id: 0;
@@ -22,10 +24,15 @@ export interface IPlayerResponse extends ILoginStaticRequest {
   data: ILoginResponse;
 }
 
+export interface ICreatedGameResponse {
+  idGame: string;
+  idPlayer: string;
+}
+
 export interface IGameRoom {
   roomId: number | string;
   roomUsers: IPublicUserData[];
-  games: Record<string, IGame>;
+  game: Game | null;
 }
 
 export interface IPublicUserData {
@@ -33,9 +40,10 @@ export interface IPublicUserData {
   index: number;
 }
 
-interface IGame {
-  gameId: string;
+export interface IGame {
+  idGame: string;
   gameField: string;
+  players: Record<string, IPublicUserData>;
 }
 
 export interface IUserData {
