@@ -1,6 +1,6 @@
 import WebSocket from 'ws';
 import database from '../models/database';
-import { BodyTypes, ICreatedGameResponse, IUserData } from '../models/types';
+import { BodyTypes, IUserData } from '../models/types';
 import Game from '../models/game';
 
 interface IRoom {
@@ -18,7 +18,6 @@ const rooms: Record<string, IRoom> = {};
 const webSocketHandlers = (ws: WebSocket) => {
   connections.push(ws);
 
-  ws.send('Successfully connected to WebSocket.');
   const userData: IUserData = {
     name: null,
     index: null,
@@ -42,12 +41,12 @@ const webSocketHandlers = (ws: WebSocket) => {
         throw new Error('Bad request: Not enough or wrong fields.');
       }
 
-      const { type, data, id } = parsedData;
+      const { type } = parsedData;
+
+      const data = parsedData(parsedData.data);
 
       switch (type) {
         case 'reg': {
-          if (userData.isLogged) return ws.send('You are already logged!');
-
           if (
             !(
               'name' in data &&
@@ -67,7 +66,6 @@ const webSocketHandlers = (ws: WebSocket) => {
             userData.isLogged = true;
           }
 
-          ws.send('Successfully logged!');
           sendPersonalResponse(type, loginUserData, ws);
           sendUpdatedRooms();
           sendUpdatedWinners();
@@ -76,23 +74,17 @@ const webSocketHandlers = (ws: WebSocket) => {
         }
 
         case 'create_room': {
-          if (userData.name) {
-            const roomId = database.createGameRoom(userData.name);
+          const roomId = database.createGameRoom(userData.name!);
 
-            ws.send(`Room has been successfully created with id (${roomId})`);
+          const userIndex = userData.index;
 
-            const userIndex = userData.index;
-
-            if (userIndex !== null) {
-              rooms[roomId] = {
-                users: [{ userIndex, websocket: ws }],
-              };
-            }
-
-            sendUpdatedRooms();
-          } else {
-            throw new Error('At first login/register!');
+          if (userIndex !== null) {
+            rooms[roomId] = {
+              users: [{ userIndex, websocket: ws }],
+            };
           }
+
+          sendUpdatedRooms();
 
           break;
         }
@@ -112,8 +104,6 @@ const webSocketHandlers = (ws: WebSocket) => {
           const isRoomFully = database.addPlayerToRoom(roomId, userData.name);
 
           if (!(isRoomFully instanceof Error)) {
-            ws.send(`Successfully connected to room with id (${roomId})`);
-
             const userIndex = userData.index;
 
             if (userIndex !== null) {
@@ -208,6 +198,7 @@ const webSocketHandlers = (ws: WebSocket) => {
           throw new Error('Bad request: Unknown type.');
       }
     } catch (err) {
+      console.log(err);
       ws.send(`${err}`);
     }
   });
@@ -219,17 +210,19 @@ const webSocketHandlers = (ws: WebSocket) => {
   ) => {
     const request = {
       type,
-      data,
+      data: JSON.stringify(data),
       id: 0,
     };
 
-    return client.send(JSON.stringify(request));
+    const jsonRequest = JSON.stringify(request);
+
+    return client.send(jsonRequest);
   };
 
   const sendResponseForAll = (type: BodyTypes, data: unknown) => {
     const request = {
       type,
-      data,
+      data: JSON.stringify(data),
       id: 0,
     };
 

@@ -3,6 +3,8 @@ import express, { Request, Response } from 'express';
 import http, { createServer } from 'http';
 import WebSocket, { WebSocketServer } from 'ws';
 import webSocketHandlers from '../app/controllers/websocketHandlers';
+import path from 'path';
+import fs from 'fs';
 
 class Server {
   public app = express();
@@ -22,7 +24,22 @@ class Server {
   }
 
   private configureWebSocketServer() {
-    this.httpServer = createServer(this.app);
+    this.httpServer = createServer((req, res) => {
+      const __dirname = path.resolve(path.dirname(''));
+      const file_path =
+        __dirname +
+        (req.url === '/' ? '/front/index.html' : '/front' + req.url);
+
+      fs.readFile(file_path, function (err, data) {
+        if (err) {
+          res.writeHead(404);
+          res.end(JSON.stringify(err));
+          return;
+        }
+        res.writeHead(200);
+        res.end(data);
+      });
+    });
 
     this.httpServer.listen(this.PORT, () => {
       console.log(`Server is running on port ${this.PORT}`);
