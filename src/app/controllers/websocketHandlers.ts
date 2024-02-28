@@ -2,6 +2,7 @@ import WebSocket from 'ws';
 import database from '../models/database';
 import { BodyTypes, IUserData } from '../models/types';
 import Game from '../models/game';
+import { parseData } from '../../utils/json-parse';
 
 interface IRoom {
   users: IRoomUser[];
@@ -43,7 +44,7 @@ const webSocketHandlers = (ws: WebSocket) => {
 
       const { type } = parsedData;
 
-      const data = parsedData(parsedData.data);
+      const data = parseData(parsedData.data);
 
       switch (type) {
         case 'reg': {
