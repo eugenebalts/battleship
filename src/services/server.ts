@@ -1,29 +1,19 @@
-import bodyParser from 'body-parser';
-import express, { Request, Response } from 'express';
 import http, { createServer } from 'http';
-import WebSocket, { WebSocketServer } from 'ws';
+import { WebSocketServer } from 'ws';
 import webSocketHandlers from '../app/controllers/websocketHandlers';
 import path from 'path';
 import fs from 'fs';
 
 class Server {
-  public app = express();
-  private PORT = process.env.PORT || 3000;
-  private SERVER_ERROR_MESSAGE = 'Internal Server Error';
-  private httpServer!: http.Server;
+  public httpServer!: http.Server;
   private wss!: WebSocketServer;
 
   constructor() {
-    this.configureExpressApp();
+    this.configureHttpServer();
     this.configureWebSocketServer();
-    this.configureRoutes();
   }
 
-  private configureExpressApp() {
-    this.app.use(bodyParser.json());
-  }
-
-  private configureWebSocketServer() {
+  private configureHttpServer() {
     this.httpServer = createServer((req, res) => {
       const __dirname = path.resolve(path.dirname(''));
       const file_path =
@@ -40,20 +30,12 @@ class Server {
         res.end(data);
       });
     });
-
-    this.httpServer.listen(this.PORT, () => {
-      console.log(`Server is running on port ${this.PORT}`);
-    });
-
-    this.wss = new WebSocketServer({ server: this.httpServer });
-
-    this.wss.on('connection', webSocketHandlers);
   }
 
-  public configureRoutes() {
-    this.app.use('/', (req: Request, res: Response) => {
-      res.send('Hello world!');
-    });
+  private configureWebSocketServer() {
+    this.wss = new WebSocketServer({ port: 3000 });
+
+    this.wss.on('connection', webSocketHandlers);
   }
 }
 
